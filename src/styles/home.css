@@ -1,0 +1,11 @@
+/* Home Page Styles */
+.home-page {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    background: white;
+  }
+}
