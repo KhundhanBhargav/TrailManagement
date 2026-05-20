@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from events.models import Event, FunctionHall, Decoration, FoodItem, ServiceItem
+from events.models import CustomUser, Event, FunctionHall, Decoration, FoodItem, ServiceItem
 
 
 class Command(BaseCommand):
@@ -214,56 +214,56 @@ class Command(BaseCommand):
                 'description': 'Professional DJ with quality sound system and lighting',
                 'price': 10000,
                 'duration': 4,
-                'icon': '🎵'
+                'icon': 'music'
             },
             {
                 'name': 'Photography',
                 'description': 'Professional photographer for event coverage with high-quality images',
                 'price': 15000,
                 'duration': 8,
-                'icon': '📸'
+                'icon': 'camera'
             },
             {
                 'name': 'Videography',
                 'description': 'Complete video coverage with professional editing and cinematography',
                 'price': 20000,
                 'duration': 8,
-                'icon': '🎥'
+                'icon': 'video'
             },
             {
                 'name': 'Catering Staff',
                 'description': 'Professional catering staff for smooth food service',
                 'price': 5000,
                 'duration': 6,
-                'icon': '👨‍🍳'
+                'icon': 'chef'
             },
             {
                 'name': 'Florals Arrangement',
                 'description': 'Beautiful floral arrangements for centerpieces and stage',
                 'price': 12000,
                 'duration': None,
-                'icon': '🌹'
+                'icon': 'flower'
             },
             {
                 'name': 'Makeup Artist',
                 'description': 'Professional makeup artist for bridal and guest makeup',
                 'price': 8000,
                 'duration': 4,
-                'icon': '💄'
+                'icon': 'makeup'
             },
             {
                 'name': 'Event Coordinator',
                 'description': 'Professional event coordinator to manage all aspects of your event',
                 'price': 15000,
                 'duration': 12,
-                'icon': '👔'
+                'icon': 'manager'
             },
             {
                 'name': 'Security Services',
                 'description': 'Professional security personnel for event safety',
                 'price': 8000,
                 'duration': 8,
-                'icon': '🛡️'
+                'icon': 'security'
             }
         ]
         
@@ -277,5 +277,22 @@ class Command(BaseCommand):
                     'icon': service['icon']
                 }
             )
+
+        admin_user, created = CustomUser.objects.get_or_create(
+            email='ali@example.com',
+            defaults={
+                'name': 'Ali',
+                'phone': '',
+                'is_staff': True,
+                'is_superuser': True,
+                'is_active': True,
+            }
+        )
+        if created:
+            admin_user.set_password('123456')
+            admin_user.save()
+            self.stdout.write(self.style.SUCCESS('Created admin user Ali / 123456'))
+        else:
+            self.stdout.write('Admin user already exists: Ali')
 
         self.stdout.write(self.style.SUCCESS('\n✓ All sample data created successfully!'))

@@ -38,8 +38,13 @@ export const EventList = () => {
         const response = await api.get(EVENT_ENDPOINTS.LIST);
         setEvents(response.data);
       } catch (err) {
-        setError('Failed to fetch events');
-        console.error(err);
+        const message =
+          err.response?.data?.detail ||
+          err.response?.statusText ||
+          err.message ||
+          'Failed to fetch events';
+        setError(message);
+        console.error('Event fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -49,11 +54,14 @@ export const EventList = () => {
   }, []);
 
   if (loading) return <div className="loading">Loading events...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (error) return <div className="error">Failed to fetch events: {error}</div>;
 
   return (
     <div className="events-container">
       <h2>All Event Types</h2>
+      <p className="events-intro">
+        Discover the events we provide, including weddings, corporate meetups, birthday parties, cultural celebrations, and special occasions — all designed with beautiful decor, catering, and seamless planning.
+      </p>
       <div className="events-grid">
         {events.map((event) => (
           <EventCard key={event.id} event={event} />

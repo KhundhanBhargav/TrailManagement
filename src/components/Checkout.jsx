@@ -102,7 +102,10 @@ export const Checkout = () => {
         bookingPayload
       );
 
-      const bookingId = bookingResponse.data.id;
+      const bookingId = bookingResponse.data?.id;
+      if (!bookingId) {
+        throw new Error('Booking created but returned invalid booking ID.');
+      }
 
       // Navigate to payment page to complete advance payment
       navigate(`/payments/${bookingId}`, {

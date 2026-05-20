@@ -31,6 +31,8 @@ function App() {
 
             {/* Protected Routes */}
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/payment/:bookingId" element={<PaymentPage />} />
+            <Route path="/payments" element={<PaymentPage />} />
             <Route path="/payments/:bookingId" element={<PaymentPage />} />
             <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
             <Route path="/bookings" element={<MyBookings />} />

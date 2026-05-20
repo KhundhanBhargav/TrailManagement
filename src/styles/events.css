@@ -8,8 +8,17 @@
 .events-container h2 {
   text-align: center;
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem;
   color: #333;
+}
+
+.events-intro {
+  max-width: 780px;
+  margin: 0 auto 2rem;
+  color: #666;
+  text-align: center;
+  line-height: 1.7;
+  font-size: 1rem;
 }
 
 .events-grid {

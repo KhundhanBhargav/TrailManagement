@@ -2,9 +2,6 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
-import pymysql
-
-pymysql.install_as_MySQLdb()
 
 load_dotenv()
 
@@ -57,19 +54,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend_project.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.mysql'),
-        'NAME': os.getenv('DJANGO_DB_NAME', 'traileventmanagement'),
-        'USER': os.getenv('DJANGO_DB_USER', 'root'),
-        'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', 'root@123'),
-        'HOST': os.getenv('DJANGO_DB_HOST', '127.0.0.1'),
-        'PORT': os.getenv('DJANGO_DB_PORT', '3306'),
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+DB_ENGINE = os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.mysql')
+
+if DB_ENGINE == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DJANGO_DB_NAME', BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.getenv('DJANGO_DB_NAME', 'traileventmanagement'),
+            'USER': os.getenv('DJANGO_DB_USER', 'root'),
+            'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', 'root'),
+            'HOST': os.getenv('DJANGO_DB_HOST', '127.0.0.1'),
+            'PORT': os.getenv('DJANGO_DB_PORT', '3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -111,5 +118,17 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+CORS_ALLOWED_ORIGINS = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:5173,http://127.0.0.1:5173',
+).split(',')
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
+
+EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('DJANGO_EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('DJANGO_EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
+EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('DJANGO_EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@eventhub.local')

@@ -9,6 +9,7 @@ export const BookingConfirmation = () => {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -16,6 +17,12 @@ export const BookingConfirmation = () => {
         const response = await api.get(BOOKING_ENDPOINTS.DETAIL(bookingId));
         setBooking(response.data);
       } catch (err) {
+        const message =
+          err.response?.data?.detail ||
+          err.response?.statusText ||
+          err.message ||
+          'Failed to load booking.';
+        setError(message);
         console.error('Failed to fetch booking:', err);
       } finally {
         setLoading(false);
@@ -26,7 +33,7 @@ export const BookingConfirmation = () => {
   }, [bookingId]);
 
   if (loading) return <div className="loading">Loading confirmation...</div>;
-  if (!booking) return <div className="error">Booking not found</div>;
+  if (!booking) return <div className="error">Booking could not be loaded: {error || 'Booking not found'}</div>;
 
   return (
     <div className="confirmation-container">

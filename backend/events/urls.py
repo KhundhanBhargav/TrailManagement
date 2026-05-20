@@ -5,6 +5,7 @@ from .views import (
     RegisterView,
     UserDetailView,
     LogoutView,
+    CustomTokenObtainPairView,
     EventListView,
     EventDetailView,
     FunctionHallListView,
@@ -18,16 +19,22 @@ from .views import (
     PaymentVerifyView,
     AdminDashboardView,
     AdminBookingListView,
+    AdminEventListView,
+    AdminEventDetailView,
     AdminVenueListView,
+    AdminVenueDetailView,
     AdminDecorationListView,
+    AdminDecorationDetailView,
     AdminFoodListView,
+    AdminFoodDetailView,
     AdminServiceListView,
+    AdminServiceDetailView,
 )
 
 urlpatterns = [
     # Authentication
     path('auth/register/', RegisterView.as_view(), name='register'),
-    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/logout/', LogoutView.as_view(), name='logout'),
     path('auth/user/', UserDetailView.as_view(), name='user-detail'),
@@ -54,16 +61,20 @@ urlpatterns = [
     path('bookings/<int:pk>/', BookingDetailView.as_view(), name='booking-detail'),
 
     # Payments
-    path('payments', PaymentCreateView.as_view()),
     path('payments/', PaymentCreateView.as_view(), name='payment-create'),
-    path('payments/verify', PaymentVerifyView.as_view()),
     path('payments/verify/', PaymentVerifyView.as_view(), name='payment-verify'),
 
     # Admin
     path('admin/dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     path('admin/bookings/', AdminBookingListView.as_view(), name='admin-bookings'),
     path('admin/venues/', AdminVenueListView.as_view(), name='admin-venues'),
+    path('admin/venues/<int:pk>/', AdminVenueDetailView.as_view(), name='admin-venue-detail'),
     path('admin/decorations/', AdminDecorationListView.as_view(), name='admin-decorations'),
+    path('admin/decorations/<int:pk>/', AdminDecorationDetailView.as_view(), name='admin-decoration-detail'),
     path('admin/food/', AdminFoodListView.as_view(), name='admin-food'),
+    path('admin/food/<int:pk>/', AdminFoodDetailView.as_view(), name='admin-food-detail'),
     path('admin/services/', AdminServiceListView.as_view(), name='admin-services'),
+    path('admin/services/<int:pk>/', AdminServiceDetailView.as_view(), name='admin-service-detail'),
+    path('admin/events/', AdminEventListView.as_view(), name='admin-events'),
+    path('admin/events/<int:pk>/', AdminEventDetailView.as_view(), name='admin-event-detail'),
 ]

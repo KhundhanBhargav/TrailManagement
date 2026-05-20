@@ -15,7 +15,7 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'name', 'email', 'phone', 'is_staff')
+        fields = ('id', 'name', 'email', 'phone', 'is_staff', 'is_superuser')
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -71,7 +71,7 @@ class ServiceItemSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    decorations = decorators = DecorationSerializer(many=True, read_only=True)
+    decorations = DecorationSerializer(many=True, read_only=True)
     food_items = FoodItemSerializer(many=True, read_only=True)
     services = ServiceItemSerializer(many=True, read_only=True)
     function_hall = FunctionHallSerializer(read_only=True)
@@ -121,6 +121,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = (
+            'id',
             'customer_name',
             'customer_email',
             'customer_phone',
@@ -135,6 +136,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
             'food_items',
             'services',
         )
+        read_only_fields = ('id',)
 
     def create(self, validated_data):
         decorations = validated_data.pop('decorations', [])
@@ -158,6 +160,6 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class PaymentVerifySerializer(serializers.Serializer):
     booking_id = serializers.IntegerField()
-    razorpay_order_id = serializers.CharField()
+    razorpay_order_id = serializers.CharField(required=False, allow_blank=True)
     razorpay_payment_id = serializers.CharField()
     razorpay_signature = serializers.CharField()

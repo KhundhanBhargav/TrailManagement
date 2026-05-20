@@ -13,6 +13,10 @@ export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const handleFillAdmin = () => {
+    setFormData({ email: 'Ali', password: '123456' });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -46,16 +50,17 @@ export const Login = () => {
           {errors.submit && <div className="error-message">{errors.submit}</div>}
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email or Name</label>
             <input
-              type="email"
+              type="text"
               id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="your@email.com"
+              placeholder="Email or name"
             />
+            <small className="hint-text">Admin login: Ali / 123456</small>
           </div>
 
           <div className="form-group">
@@ -74,6 +79,13 @@ export const Login = () => {
           <button type="submit" disabled={loading} className="submit-btn">
             {loading ? 'Logging in...' : 'Login'}
           </button>
+
+          <div className="admin-shortcut">
+            <p>Need admin access? Fill the demo admin account:</p>
+            <button type="button" onClick={handleFillAdmin} className="admin-shortcut-btn">
+              Fill Admin Credentials
+            </button>
+          </div>
         </form>
 
         <p className="auth-switch">

@@ -4,6 +4,7 @@ export const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login/',
   REFRESH: '/auth/refresh/',
   LOGOUT: '/auth/logout/',
+  USER: '/auth/user/',
 };
 
 // Events Endpoints
@@ -51,8 +52,14 @@ export const PAYMENT_ENDPOINTS = {
 export const ADMIN_ENDPOINTS = {
   DASHBOARD: '/admin/dashboard/',
   BOOKINGS: '/admin/bookings/',
+  EVENTS: '/admin/events/',
+  EVENT_DETAIL: (id) => `/admin/events/${id}/`,
   VENUES: '/admin/venues/',
+  VENUE_DETAIL: (id) => `/admin/venues/${id}/`,
   DECORATIONS: '/admin/decorations/',
+  DECORATION_DETAIL: (id) => `/admin/decorations/${id}/`,
   FOOD: '/admin/food/',
+  FOOD_DETAIL: (id) => `/admin/food/${id}/`,
   SERVICES: '/admin/services/',
+  SERVICE_DETAIL: (id) => `/admin/services/${id}/`,
 };

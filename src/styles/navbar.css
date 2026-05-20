@@ -123,6 +123,14 @@
   opacity: 0.9;
 }
 
+.header-subtext {
+  font-size: 1rem;
+  color: #2d5234;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
 .cta-button {
   padding: 1rem 2rem;
   background: white;

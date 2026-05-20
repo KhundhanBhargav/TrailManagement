@@ -1,8 +1,13 @@
 import uuid
+from django.conf import settings
+from django.contrib.auth import authenticate
+from django.core.mail import send_mail
 from django.db.models import Sum
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import (
@@ -28,6 +33,40 @@ from .serializers import (
     PaymentSerializer,
     PaymentVerifySerializer,
 )
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        identifier = attrs.get('email') or attrs.get('username')
+        password = attrs.get('password')
+
+        if not identifier or not password:
+            raise AuthenticationFailed('Must include email/name and password.')
+
+        user = None
+        # First try with email
+        if '@' in identifier:
+            user = authenticate(self.context['request'], username=identifier, password=password)
+        else:
+            user = authenticate(self.context['request'], username=identifier, password=password)
+            if user is None:
+                user_obj = CustomUser.objects.filter(name__iexact=identifier).first()
+                if user_obj:
+                    user = authenticate(self.context['request'], username=user_obj.email, password=password)
+
+        if user is None:
+            raise AuthenticationFailed('No active account found with the given credentials')
+        if not user.is_active:
+            raise AuthenticationFailed('User account is disabled.')
+
+        self.user = user
+        data = super().validate({'email': user.email, 'password': password})
+        data['user'] = UserSerializer(user).data
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -107,10 +146,49 @@ class BookingListCreateView(generics.ListCreateAPIView):
         return BookingSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        booking = serializer.save()
+        self.send_booking_confirmation_email(booking)
+
+    def send_booking_confirmation_email(self, booking):
+        if not booking.customer_email:
+            return
+
+        subject = f'Your Event Booking #{booking.id} is Confirmed'
+        decorations = ', '.join([item.name for item in booking.decorations.all()]) or 'None'
+        food_items = ', '.join([item.name for item in booking.food_items.all()]) or 'None'
+        services = ', '.join([item.name for item in booking.services.all()]) or 'None'
+        hall_name = booking.function_hall.name if booking.function_hall else 'None'
+
+        message = (
+            f'Hello {booking.customer_name},\n\n'
+            f'Your booking has been confirmed. Here are the details:\n\n'
+            f'Booking ID: {booking.id}\n'
+            f'Event Date: {booking.event_date}\n'
+            f'Guest Count: {booking.guest_count}\n'
+            f'Function Hall: {hall_name}\n'
+            f'Decorations: {decorations}\n'
+            f'Food Items: {food_items}\n'
+            f'Services: {services}\n'
+            f'Total Amount: ₹{booking.total_amount}\n'
+            f'Advance Amount: ₹{booking.advance_amount}\n'
+            f'Payment Status: {booking.payment_status}\n'
+            f'Status: {booking.status}\n\n'
+            'Thank you for booking with EventHub.\n'
+            'We will contact you shortly with the next steps.\n\n'
+            'Best regards,\n'
+            'EventHub Team'
+        )
+
+        send_mail(
+            subject,
+            message,
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@eventhub.local'),
+            [booking.customer_email],
+            fail_silently=False,
+        )
 
 
-class BookingDetailView(generics.RetrieveUpdateAPIView):
+class BookingDetailView(generics.RetrieveAPIView):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -138,7 +216,6 @@ class PaymentCreateView(APIView):
             booking=booking,
             amount=amount,
             payment_type=payment_type,
-            razorpay_order_id=str(uuid.uuid4()),
             status='pending',
         )
 
@@ -157,15 +234,21 @@ class PaymentVerifyView(APIView):
         serializer.is_valid(raise_exception=True)
 
         booking_id = serializer.validated_data['booking_id']
-        razorpay_order_id = serializer.validated_data['razorpay_order_id']
+        razorpay_order_id = serializer.validated_data.get('razorpay_order_id')
         razorpay_payment_id = serializer.validated_data['razorpay_payment_id']
         razorpay_signature = serializer.validated_data['razorpay_signature']
 
-        try:
-            payment = Payment.objects.get(booking_id=booking_id, razorpay_order_id=razorpay_order_id)
-        except Payment.DoesNotExist:
+        payment = None
+        if razorpay_order_id:
+            payment = Payment.objects.filter(booking_id=booking_id, razorpay_order_id=razorpay_order_id).first()
+
+        if not payment:
+            payment = Payment.objects.filter(booking_id=booking_id, status='pending').order_by('-created_at').first()
+
+        if not payment:
             return Response({'detail': 'Payment record not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        payment.razorpay_order_id = razorpay_order_id or payment.razorpay_order_id
         payment.razorpay_payment_id = razorpay_payment_id
         payment.razorpay_signature = razorpay_signature
         payment.status = 'paid'
@@ -202,25 +285,61 @@ class AdminBookingListView(generics.ListAPIView):
     permission_classes = [permissions.IsAdminUser]
 
 
-class AdminVenueListView(generics.ListAPIView):
+class AdminEventListView(generics.ListCreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminVenueListView(generics.ListCreateAPIView):
     queryset = FunctionHall.objects.all()
     serializer_class = FunctionHallSerializer
     permission_classes = [permissions.IsAdminUser]
 
 
-class AdminDecorationListView(generics.ListAPIView):
+class AdminVenueDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FunctionHall.objects.all()
+    serializer_class = FunctionHallSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminDecorationListView(generics.ListCreateAPIView):
     queryset = Decoration.objects.all()
     serializer_class = DecorationSerializer
     permission_classes = [permissions.IsAdminUser]
 
 
-class AdminFoodListView(generics.ListAPIView):
+class AdminDecorationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Decoration.objects.all()
+    serializer_class = DecorationSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminFoodListView(generics.ListCreateAPIView):
     queryset = FoodItem.objects.all()
     serializer_class = FoodItemSerializer
     permission_classes = [permissions.IsAdminUser]
 
 
-class AdminServiceListView(generics.ListAPIView):
+class AdminFoodDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FoodItem.objects.all()
+    serializer_class = FoodItemSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminServiceListView(generics.ListCreateAPIView):
+    queryset = ServiceItem.objects.all()
+    serializer_class = ServiceItemSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+
+class AdminServiceDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ServiceItem.objects.all()
     serializer_class = ServiceItemSerializer
     permission_classes = [permissions.IsAdminUser]

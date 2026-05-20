@@ -70,7 +70,7 @@ export const MyBookings = () => {
                 </div>
               </div>
               <button
-                onClick={() => navigate(`/booking/${booking.id}`)}
+                onClick={() => navigate(`/booking-confirmation/${booking.id}`)}
                 className="view-details-btn"
               >
                 View Details
